@@ -6,3 +6,11 @@ html, body {
 * {
     box-sizing: border-box;
 }
+
+
+canvas {
+    position:relative;
+    display:block;
+    margin:auto;
+    margin-top:150px;
+}
