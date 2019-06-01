@@ -8,7 +8,14 @@ html, body {
 }
 
 
+
+body {
+    background:black;
+}
+
 canvas {
+    padding:25px;
+    background:white;
     position:relative;
     display:block;
     margin:auto;
