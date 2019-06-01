@@ -17,7 +17,10 @@ export default class Bejewled {
 
         this.setUpCanvas();
         this.setUpBoard();
+        this.willTilesDestroy(this.board);
         this.drawBoard();
+
+        
     }
 
     setUpCanvas = () => {
@@ -42,8 +45,6 @@ export default class Bejewled {
             let col = [];
             for (let x=0; x< columns;x +=1) {
                 const config = {
-                    x, 
-                    y,
                     size : this.config.squareSize
                 }
                 col.push(new Tile(config, this.ctx));
@@ -63,9 +64,12 @@ export default class Bejewled {
         for (let row=0;row<board.length; row+=1) {
             for (let col=0;col<board[row].length; col+=1) {
                 const tile = board[row][col];
-                tile.draw();
+               
+                tile.draw(col, row);
             }
         }
+        console.log('draw')
+        console.log(board);
     }
 
 
@@ -81,103 +85,153 @@ export default class Bejewled {
         
         if (this.activeSquare) {
             //reset
-            this.activeSquare.active = false;
-        }
-        
-        //check if tile should swap
-        if (this.tilesAreAdjacent(this.activeSquare, this.board[row][col])) {
-            this.swapTiles(this.activeSquare, this.board[row][col]);
-        } else {
-            this.activeSquare = this.board[row][col];
-            this.activeSquare.active = true;
-            this.drawBoard();
-        }
+            this.activeSquare.tile.active = false;
 
+            if (this.tilesAreAdjacent(this.activeSquare.coords, {x:col, y:row})) {
+                this.swapTiles(this.activeSquare.coords, {x:col, y:row});
+            }
+        }
         
+        this.activeSquare = {
+            tile : this.board[row][col],
+            coords : {
+                x : col,
+                y : row
+            }
+        }
+        this.activeSquare.tile.active = true;
+        this.drawBoard();       
         
     }
 
 
-    tilesAreAdjacent = (tile1, tile2) => {
+    tilesAreAdjacent = (coord1, coord2) => {
         //checks if tiles are next to eachother 
-        if (tile1 === null) return;
-        console.log(Math.abs(tile1.config.x - tile2.config.x), Math.abs(tile1.config.y - tile2.config.y))
-        return Math.abs(tile1.config.x - tile2.config.x) < 2 && Math.abs(tile1.config.y - tile2.config.y) < 2;
+       
+        //console.log('tiles are adjacent = ', Math.abs(tile1.config.x - tile2.config.x) < 2 && Math.abs(tile1.config.y - tile2.config.y) < 2)
+        return Math.abs(coord1.x - coord2.x) < 2 && Math.abs(coord1.y - coord2.y) < 2;
     }
 
     willTilesDestroy = (board) => {
         //uses a given board instead of current board so we can check tile swaps
         //check all tiles and see if any die
         //return boolean result
-        let destroy = false;
+        let willDestroy = false;
+        let currentType = null;
+        let destroyInOrderCount = 0; //if this gets to 3 then last 3 are destroyed
+       
+        //check rows
         for (let row=0;row<board.length;row+=1) {
-            for (let col=0;col<board.length;col+=1) {
-                destroy = this.checkTileDestroy(board, board[row][col]);
+            for (let col=0;col<board[row].length;col+=1) {
+                if (board[row][col].config.id === currentType) {
+                    destroyInOrderCount += 1;
+                    
+                    if (destroyInOrderCount === 2) {
+                        //row of 3
+                        //set last 3 to destroyed = true
+                        board[row][col].destroyed = true;
+                        board[row][col-1].destroyed = true;
+                        board[row][col-2].destroyed = true;
+                        console.log('DESTROYING ROW ' , row, col);
+                        willDestroy = true;
+
+                    } else if (destroyInOrderCount > 2) {
+                        //set current to destroyed = true
+                        board[row][col].destroyed = true;
+                    }
+
+                } else {
+                    currentType = board[row][col].config.id;
+                    destroyInOrderCount = 0;
+                }
             }
+            //reset at end of row
+            currentType = null;
+            destroyInOrderCount = 0;
         }
-        return destroy;
+
+
+        //check columns
+        currentType = null;
+        destroyInOrderCount = 0;
+        for (let col=0;col<board[0].length;col+=1) {
+            for (let row=0;row<board.length;row+=1) {
+                if (board[row][col].config.id === currentType) {
+                    destroyInOrderCount += 1;
+                    
+                    if (destroyInOrderCount === 2) {
+                        //row of 3
+                        //set last 3 to destroyed = true
+                        board[row][col].destroyed = true;
+                        board[row-1][col].destroyed = true;
+                        board[row-2][col].destroyed = true;
+                        console.log('DESTROYING COL' , row, col);
+                        willDestroy = true;
+
+                    } else if (destroyInOrderCount > 2) {
+                        //set current to destroyed = true
+                        board[row][col].destroyed = true;
+                    }
+
+                } else {
+                    currentType = board[row][col].config.id;
+                    destroyInOrderCount = 0;
+                }
+            }
+            //reset at end of row
+            currentType = null;
+            destroyInOrderCount = 0;
+        }
+
+
+        return willDestroy;
 
     }
 
-    checkTileDestroy = (board, tile) => {
-        const {
-            x, 
-            y
-        } = tile.config;
-        //check UP
-        if (board[y-1][x].id === tile.id) {
-            //1 up is same
-            //check 1 below 
-            if (board[y+1][x].id === tile.id) {
-                //3 in a row
-                board[y-1][x].destroyed = true;
-                tile.destroyed = true;
-                board[y+1][x].destroyed = true;
-                return true;
-            }
-            //check 2 up
-            if (board[y-2][x].id === tile.id) {
-                board[y-2][x].destroyed = true;
-                board[y-1][x].destroyed = true;
-                tile.destroyed = true;
-                return true;
-            }
-        }
-
-        //check DOWN
-        if (board[y+1][x].id === tile.id) {
-            //1 down is same
-            //check 1 up 
-            if (board[y-1][x].id === tile.id) {
-                //3 in a row
-                board[y-1][x].destroyed = true;
-                tile.destroyed = true;
-                board[y+1][x].destroyed = true;
-                return true;
-            }
-            //check 2 down
-            if (board[y+2][x].id === tile.id) {
-                board[y+2][x].destroyed = true;
-                board[y+1][x].destroyed = true;
-                tile.destroyed = true;
-                return true;
-            }
-        }
-
-    }
+   
 
     swapTiles = (tile1, tile2) => {
-        //create dummy board with tiles swapped 
-        //check willTilesDestroy
-        //if true then do full swap and doActualDestroy
-        //else do swap animation
-        const futureBoard = cloneDeep(this.board);
+        //swap tiles
+        //check if will destroy
+        //if yes then start destroy animation 
+        //if no then reset tiles
 
-        futureBoard[tile1.config.y][tile1.config.x] = tile2;
-        futureBoard[tile2.config.y][tile2.config.x] = tile1;
+        const temp = this.board[tile1.y][tile1.x];
+        this.board[tile1.y][tile1.x] = this.board[tile2.y][tile2.x];
+        this.board[tile2.y][tile2.x] = temp; 
         
-        const willDestroy = this.willTilesDestroy(futureBoard);
-        console.log(willDestroy);
+       
+       
+        
+        const willDestroy = this.willTilesDestroy(this.board);
+        
+        if (willDestroy) {
+            //swap tiles
+            //futureBoard[tile1.config.y][tile1.config.x] = tile2;
+           
+            
+            this.activeSquare.tile.active = false;
+            this.activeSquare = null;
+            
+            
+
+            
+            
+        } else {
+            //do fake swap animation
+
+
+            //reset tiles
+            setTimeout(()=>{
+                this.board[tile2.y][tile2.x] = this.board[tile1.y][tile1.x];
+                this.board[tile1.y][tile1.x] = temp;
+                this.drawBoard();
+            },400)
+            
+            
+        }
+
+        
         
     }
 }

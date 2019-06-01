@@ -57,32 +57,39 @@ export default class Tile {
         this.config = config;
         this.ctx = ctx;
         this.active = false;
-        this.config.background = this.getRandomBackground();
+        this.destroyed = false;
+        this.getRandomBackground();
     }
 
     getRandomBackground() {
         //dev version return color
         const r1 = tileTypes[Math.floor(Math.random() * tileTypes.length)];
-
-        return r1.background;
+        this.config = {
+            ...this.config,
+            ...r1
+        }
     }
 
 
-    draw = () => {
+    draw = (x, y) => {
         const {ctx} = this;
         const {
-            x,
-            y,
             size,
             background,
         } = this.config;
 
         ctx.fillStyle = background;
         ctx.fillRect(x * size, y * size, size, size);
-
         //if active add opacity background so obvious
         if (this.active) {
             ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+            ctx.fillRect(x * size, y * size, size, size);
+        }
+
+       
+        if (this.destroyed) {
+            console.log('tile is destroyed', this.config);
+            ctx.fillStyle = "rgb(0, 0, 0)";
             ctx.fillRect(x * size, y * size, size, size);
         }
     }
