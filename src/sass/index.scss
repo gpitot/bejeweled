@@ -1,0 +1,32 @@
+html, body {
+    margin:0;
+    padding:0;
+    background:black;
+}
+
+* {
+    box-sizing:border-box;
+}
+
+
+#game {
+    width:1030px;
+    height:250px;
+    position:relative;
+    margin:100px auto;
+
+    overflow:hidden;
+
+    .tile {
+        position:absolute;
+        transition: all 0.4s ease;
+    }
+
+
+    .active {
+        border:solid 4px yellow;
+    }
+    .destroy {
+        transform:scale(0);
+    }
+}
