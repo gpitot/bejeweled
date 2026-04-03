@@ -30,7 +30,7 @@
     "gulp-sourcemaps": "^2.6.5",
     "npx": "^10.2.0",
     "run-sequence": "^2.2.1",
-    "webpack-stream": "^5.2.1"
+    "webpack-stream": "^7.0.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
